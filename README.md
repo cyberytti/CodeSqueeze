@@ -4,10 +4,9 @@
 
 <div align="center">
 
-### Ever tried to upload an entire codebase to a chatbot, only to hit the dreaded context limit error? 😩
+### Ever tried to upload an entire codebase to a chatbot, and hit the context limit error? 😩
 
 **CodeSqueeze is the answer!** It intelligently scans your project, bundles all your source code into a single, optimized text file, and gets it ready for any AI chatbot. Provide full project context to models like **Qwen**, **Claude**, or **GPT** with zero hassle.
-
 </div>
 
 -----
