@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://github.com/cyberytti/CodeSqueeze/blob/main/assets/CodeSqueeze_image.png" alt="CodeSqueeze Banner" width="700"/>
+  <img src="https://github.com/cyberytti/CodeSqueeze/blob/main/assets/CodeSqueeze_image.png" alt="CodeSqueeze Banner" width="1000" hight="1000/>
 </div>
 
 <div align="center">
