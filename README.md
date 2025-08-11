@@ -10,6 +10,16 @@
 </div>
 
 -----
+## How It Works??
+
+Basically this tool combine this tree things in the output txt file.
+
+1. *System prompt*  
+2. *Project-tree structure*  
+3. *Only the source (code) files*
+
+By stripping away everything else—docs, binaries, configs, tests, etc.—it keeps the prompt within token limits while still giving the chatbot a complete, uncluttered view of the codebase.
+-----
 
 ### ✨ Features
 
