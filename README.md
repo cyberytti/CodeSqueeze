@@ -21,13 +21,47 @@ Basically this tool combine this tree things in the output txt file.
 By stripping away everything else—docs, binaries, configs, tests, etc.—it keeps the prompt within token limits while still giving the chatbot a complete, uncluttered view of the codebase.
 -----
 
-### ✨ Features
+## Features
 
-- **📦 All-in-One File**: Compresses your entire project into a single `.txt` file.
-- **🧠 AI-Optimized**: Includes a directory tree and smart headers to give the AI maximum context.
-- **📋 Auto-Clipboard**: Automatically copies the entire output to your clipboard with a single command (`-c`).
-- **🔧 Fully Customizable**: Easily add extra file types (`-e`), ignore files/folders (`-i`), or add specific files (`-f`).
-- **📊 Quick Stats**: Tells you the final file size and estimated token count.
+1. **Include Only Source Code Files**  
+   If you want to include only the source code files, just provide the project path without any other instructions.  
+   **Example:**  
+   ```
+   python3 CodeSqueeze.py "your project path"
+   ```  
+   This will give you three things: the list of files included in the output file, the output file size in MB, and the estimated token count for that file.
+
+2. **Add Other File Types**  
+   If you want to add other file types like txt, md, or anything else, use the "-e" parameter with the file type (without the dot), such as txt, md, yaml, etc.  
+   **Example:**  
+   ```
+   python3 CodeSqueeze.py "your project path" -e "txt" -e "yaml" ...
+   ```  
+   This command will include all txt and yaml files in the output file.
+
+3. **Exclude Specific Files from a Type**  
+   If you want to include a certain type of file but exclude one or two specific files from that type, use the "-i" parameter.  
+   **Example:**  
+   ```
+   python3 CodeSqueeze.py "your project path" -e "txt" -i "requirements.txt" 
+   ```  
+   This command will include all txt files except requirements.txt.
+
+4. **Include Specific Files Without Their Type**  
+   If you want to include just one or two specific files without adding their entire file type, use the "-f" parameter.  
+   **Example:**  
+   ```
+   python3 CodeSqueeze.py "your project directory" -f "the selected file" -f "another selected file"...
+   ```  
+   This command will add those specific files to the output file.
+
+5. **Copy Output as a Prompt to Clipboard**  
+   This tool usually creates a txt file that you can upload to any chatbot and discuss with it, but if you want to copy the output txt file as a prompt straight to your clipboard, use the "-c" parameter.  
+   **Example:**  
+   ```
+   python3 CodeSqueeze.py "your project path" -c 
+   ```  
+   This command will create a prompt and copy it to your clipboard automatically.
 
 -----
 
