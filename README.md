@@ -67,13 +67,17 @@ By stripping away everything else—docs, binaries, configs, tests, etc.—it ke
 
 ### 🚀 Getting Started
 
-1. **Clone the repository** (or just save the `CodeSqueeze.py` file).
-2. **Install dependencies**:
-   ```bash
-   pip install click pyfiglet pyperclip
-   ```
-3. **Run it!**
+```bash
+# 1. Clone
+git clone https://github.com/cyberytti/CodeSqueeze.git
+cd CodeSqueeze
 
+# 2. Install requirements
+pip install -r requirements.txt
+
+# 3. Check the help
+python3 CodeSqueeze.py --help
+```
 -----
 
 ### 💻 Usage
