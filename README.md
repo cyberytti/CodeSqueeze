@@ -79,29 +79,3 @@ pip install -r requirements.txt
 python3 CodeSqueeze.py --help
 ```
 -----
-
-### 💻 Usage
-
-Point the script at your project directory. It's that simple.
-
-#### **Basic Example**
-
-This command will process `my-cool-app` and create `my-cool-app_codebase.txt`.
-
-```bash
-python CodeSqueeze.py ./my-cool-app
-```
-
-#### **Advanced Example**
-
-This command will:
-
-- Process the `my-cool-app` directory.
-- Include `.md` and `.toml` files.
-- Ignore the `dist` folder and `config.json`.
-- Create a custom output file named `final_context.txt`.
-- Copy the result directly to your clipboard! 📋
-
-```bash
-python CodeSqueeze.py ./my-cool-app -e md -e toml -i dist -i config.json -o final_context.txt -c
-```
