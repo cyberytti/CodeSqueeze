@@ -1,4 +1,4 @@
-# 🚀 CodeSqueeze - Your AI Chatbot's Perfect Code Companion
+# 🚀 CodeSqueeze - A CLI tool to upload any codebase into any chatbot 
 
 ![CodeSqueeze Banner](https://github.com/cyberytti/CodeSqueeze/blob/main/assets/CodeSqueeze_image.png)
 
