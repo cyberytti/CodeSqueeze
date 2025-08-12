@@ -1,4 +1,4 @@
-# 🚀 CodeSqueeze - A CLI tool to upload any codebase into any chatbot 
+# 🚀 CodeSqueeze - A CLI tool to seamlessly upload any codebase to your preferred chatbot.
 
 ![CodeSqueeze Banner](https://github.com/cyberytti/CodeSqueeze/blob/main/assets/CodeSqueeze_image.png)
 
