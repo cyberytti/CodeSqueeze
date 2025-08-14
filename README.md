@@ -62,7 +62,7 @@ curl https://raw.githubusercontent.com/cyberytti/CodeSqueeze/refs/heads/main/Cod
 uv run CodeSqueeze.py --help
 ```
 
-**That's it!** 🎉 **Paste into ChatGPT and start getting better AI help!**
+**That's it!** 🎉 **Now you are ready to squeeze your code bases**
 
 ---
 
