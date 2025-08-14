@@ -123,8 +123,6 @@ uv run CodeSqueeze.py my-project -o my-project-for-ai.txt
 |-------------------|--------------|-----------------|
 | **ChatGPT** | Perfect | Code reviews, debugging, refactoring |
 | **Claude** | Perfect | Complex analysis, documentation |
-| **Cursor** | Perfect | Real-time coding assistance |
-| **GitHub Copilot Chat** | Perfect | In-IDE help with full context |
 | **Qwen** | Perfect | Open-source AI development |
 | **Any AI** | Works! | Whatever you're using |
 
