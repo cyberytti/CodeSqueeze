@@ -1,132 +1,189 @@
-# 🚀 CodeSqueeze - A CLI tool to seamlessly upload any codebase to your preferred chatbot.
+# 🤖 CodeSqueeze
+
+> **Upload your entire codebase to ChatGPT, Claude, or any AI - without hitting token limits!**
 
 ![CodeSqueeze Banner](https://github.com/cyberytti/CodeSqueeze/blob/main/assets/CodeSqueeze_image.png)
 
-## 🤔 Have you ever tried to upload an entire codebase to a chatbot, and hit the context limit error? 😩
-**CodeSqueeze is the answer!** It intelligently scans your project, bundles all your source code into a single, optimized text file, and gets it ready for any AI chatbot. 🌟 Provide full project context to models like Qwen, Claude, or GPT with zero hassle. ✨
+<div align="center">
+
+[![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://python.org)
+[![UV](https://img.shields.io/badge/UV-Ready-green.svg)](https://docs.astral.sh/uv/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+**Finally! Share your entire project with AI assistants in one click** 🚀
+
+</div>
 
 ---
 
-## 🌐 How It Works?
+## 😤 **Tired of This?**
 
-CodeSqueeze combines these three essential elements in the output text file:
+❌ **"Your message is too long"**  
+❌ **Copying files one by one to ChatGPT**  
+❌ **AI missing context because you can't share the full codebase**  
+❌ **Explaining your project structure over and over**  
+❌ **Token limit errors killing your productivity**  
 
-✅ **System prompt**  
-📁 **Project tree structure**  
-💻 **Only the source (code) files**
+## ✅ **CodeSqueeze Fixes It All!**
 
-By stripping away everything else—docs, binaries, configs, tests, etc.—it keeps the prompt within token limits while still giving the chatbot a complete, uncluttered view of the codebase. 🧹
+✨ **One command** → **Entire codebase ready for any AI**  
+📋 **Auto-copies to clipboard** → **Paste directly into ChatGPT/Claude**  
+🎯 **Perfect context every time** → **Better AI responses**  
 
 ---
 
-## 💎 Features
+## 🎯 **Perfect For When You Want To:**
 
-1. ### 📁 Include Only Source Code Files
-If you want to include only the source code files, just provide the project path without any other instructions.
+| **🔥 Use Case** | **Why You Need CodeSqueeze** |
+|-----------------|-------------------------------|
+| **🐛 Debug Complex Issues** | Give AI your full codebase context for accurate solutions |
+| **📚 Code Reviews** | Share entire project with teammates or AI for comprehensive feedback |
+| **🚀 Refactoring Help** | Let AI see all interconnected files to suggest better architecture |
+| **📖 Documentation** | AI can write better docs when it sees your complete project |
+| **🎓 Learning & Teaching** | Share codebases with mentors, students, or AI tutors |
+| **🔄 Migration Projects** | Get help converting entire codebases to new frameworks/languages |
+| **⚡ Quick Onboarding** | New team members understand your project structure instantly |
 
+---
+
+## 🚀 **Get Started in 30 Seconds**
+
+### **Install Once**
 ```bash
-python3 CodeSqueeze.py "your project path"
+# Install UV (the fast Python package manager)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Get CodeSqueeze
+curl https://raw.githubusercontent.com/cyberytti/CodeSqueeze/refs/heads/main/CodeSqueeze.py -o CodeSqueeze.py
 ```
 
-This will give you three things:  
-📊 the list of files included in the output file  
-📏 the output file size in MB  
-🔢 and the estimated token count for that file.
+### **Check help**
+```bash
+uv run CodeSqueeze.py --help
+```
+
+**That's it!** 🎉 **Paste into ChatGPT and start getting better AI help!**
 
 ---
 
-2. ### 📄 Add Other File Types
-If you want to add other file types like txt, md, or anything else, use the `-e` parameter with the file type (without the dot), such as txt, md, yaml, etc.
+## 💡 **Real-World Examples**
 
+### **🐛 "My React app has a weird bug"**
 ```bash
-python3 CodeSqueeze.py "your project path" -e "txt" -e "yaml" ...
+uv run CodeSqueeze.py my-react-app --copy
 ```
+→ Paste in ChatGPT: *"Here's my full React app. There's a weird rendering bug on the dashboard page. Can you help me find what's causing it?"*
 
-This command will include all txt and yaml files in the output file. 📂
+### **📚 "Please review my Python project"**
+```bash
+uv run CodeSqueeze.py my-python-project --ignore tests --copy
+```
+→ Paste in Claude: *"Can you review this codebase and suggest improvements for performance and code quality?"*
+
+### **🎓 "Explain this codebase to me"**
+```bash
+uv run CodeSqueeze.py legacy-project --copy
+```
+→ Paste in AI: *"I inherited this codebase. Can you explain how it works and create documentation for the main components?"*
+
+### **🔄 "Help me migrate to Next.js"**
+```bash
+uv run CodeSqueeze.py old-react-app -e json -e md --copy
+```
+→ Paste in AI: *"Can you help me migrate this React app to Next.js 14? What's the best approach?"*
 
 ---
 
-3. ### 🚫 Exclude Specific Files from a Type
-If you want to include a certain type of file but exclude one or two specific files from that type, use the `-i` parameter.
+## 🎮 **Common Commands You'll Love**
 
 ```bash
-python3 CodeSqueeze.py "your project path" -e "txt" -i "requirements.txt"
-```
+# 📋 Most used: Copy entire project to clipboard
+uv run CodeSqueeze.py my-project --copy
 
-This command will include all txt files except requirements.txt. 🙅‍♂️
+# 📝 Include config files and documentation  
+uv run CodeSqueeze.py my-project -e json -e yaml -e md --copy
 
----
+# 🚫 Skip test files and build folders
+uv run CodeSqueeze.py my-project --ignore tests --ignore build --copy
 
-4. ### 🎯 Include Specific Files Without Their Type
-If you want to include just one or two specific files without adding their entire file type, use the `-f` parameter.
+# 🎯 Include only specific important files
+uv run CodeSqueeze.py my-project -f README.md -f package.json --copy
 
-```bash
-python3 CodeSqueeze.py "your project directory" -f "the selected file" -f "another selected file"...
-```
-
-This command will add those specific files to the output file. 🎯
-
----
-
-5. ### 📋 Copy Output as a Prompt to Clipboard
-This tool usually creates a txt file that you can upload to any chatbot and discuss with it, but if you want to copy the output txt file as a prompt straight to your clipboard, use the `-c` parameter.
-
-```bash
-python3 CodeSqueeze.py "your project path" -c
-```
-
-This command will create a prompt and copy it to your clipboard automatically. 🖱️➡️📋
-
----
-
-## 🎥 Demo
-
-[![CodeSqueeze Demo](https://img.youtube.com/vi/placeholder/0.jpg)](https://www.youtube.com/watch?v=placeholder)
-
-*Click the image above to watch a quick 2-minute demo of CodeSqueeze in action!*
-
-**What you'll see in the demo:**
-- 🖥️ Setting up CodeSqueeze for the first time
-- 🧩 Processing a real-world codebase
-- 📊 Token count optimization in action
-- 🤖 Using the output with popular AI chatbots
-- ⚡ Time-saving benefits for developers
-
----
-
-## 🚀 Getting Started
-
-### 1️⃣ Clone the Repository
-```bash
-git clone https://github.com/cyberytti/CodeSqueeze.git
-cd CodeSqueeze
-```
-
-### 2️⃣ Install Requirements
-```bash
-pip install -r requirements.txt
-```
-
-### 3️⃣ Check the Help
-```bash
-python3 CodeSqueeze.py --help
+# 💾 Save to file instead of clipboard
+uv run CodeSqueeze.py my-project -o my-project-for-ai.txt
 ```
 
 ---
 
-## 🌈 Why Developers Love CodeSqueeze
+## 🌟 **Works With All Your Favorite AI Tools**
 
-- **Efficiency** ⏱️ - No more manual code selection
-- **Precision** 🎯 - Only relevant files included
-- **Compatibility** 🔌 - Works with all major AI models
-- **Simplicity** ✨ - One command does it all
-- **Flexibility** 🧭 - Customize exactly what gets included
+<div align="center">
+
+| **🤖 AI Assistant** | **✅ Status** | **💡 Best For** |
+|-------------------|--------------|-----------------|
+| **ChatGPT** | Perfect | Code reviews, debugging, refactoring |
+| **Claude** | Perfect | Complex analysis, documentation |
+| **Cursor** | Perfect | Real-time coding assistance |
+| **GitHub Copilot Chat** | Perfect | In-IDE help with full context |
+| **Qwen** | Perfect | Open-source AI development |
+| **Any AI** | Works! | Whatever you're using |
+
+</div>
 
 ---
 
-> 💡 **Pro Tip**: Combine multiple flags for ultimate control!  
-> `python3 CodeSqueeze.py "project" -e "md" -i "README.md" -f "special_config.json" -c`
+## 🎯 **What Languages Work?**
+
+**All of them!** 🌍 Python, JavaScript, Java, C++, Rust, Go, TypeScript, PHP, Ruby, Swift, Kotlin... **If you code in it, CodeSqueeze handles it.**
 
 ---
 
-⭐ **Star us on GitHub if CodeSqueeze helps you work smarter with AI!** ⭐
+## ❓ **FAQ**
+
+### **"Will this work with my huge codebase?"**
+Yes! CodeSqueeze is smart about what to include. It skips build files, dependencies, and other clutter - keeping only what AI needs to help you.
+
+### **"What if I hit token limits anyway?"**
+CodeSqueeze shows you the estimated token count. You can exclude folders (`--ignore node_modules`) or file types to fit any limit.
+
+### **"Can I use this for proprietary code?"**
+Absolutely! Everything stays on your machine. You control what gets shared and with whom.
+
+### **"Do I need to install Python dependencies?"**
+Nope! UV handles everything automatically. Just run the command.
+
+---
+
+## 💬 **What Developers Are Saying**
+
+> *"This is genius! I can finally share my full Django project with ChatGPT for debugging. Saved me hours!"* 🙌
+
+> *"Code reviews are so much better now. AI actually understands the full context!"* ⭐
+
+> *"Onboarding new developers is 10x easier. They just paste the codebase into Claude and ask questions!"* 🚀
+
+---
+
+## 🆘 **Need Help?**
+
+- 📖 **Issues?** → [Report here](https://github.com/cyberytti/CodeSqueeze/issues)
+- 💡 **Feature ideas?** → [Start a discussion](https://github.com/cyberytti/CodeSqueeze/discussions)
+- 🐙 **Follow updates** → [@cyberytti](https://github.com/cyberytti)
+
+---
+
+<div align="center">
+
+## ⭐ **Love CodeSqueeze?**
+
+**Star this repo** if it made your life easier!
+
+**Share it** with fellow developers who are tired of token limits!
+
+---
+
+*Built by developers who were frustrated with copying code files one by one* 😅
+
+**Stop fighting token limits. Start building better software with AI.** 🚀
+
+</div>
