@@ -152,23 +152,6 @@ Nope! UV handles everything automatically. Just run the command.
 
 ---
 
-## 💬 **What Developers Are Saying**
-
-> *"This is genius! I can finally share my full Django project with ChatGPT for debugging. Saved me hours!"* 🙌
-
-> *"Code reviews are so much better now. AI actually understands the full context!"* ⭐
-
-> *"Onboarding new developers is 10x easier. They just paste the codebase into Claude and ask questions!"* 🚀
-
----
-
-## 🆘 **Need Help?**
-
-- 📖 **Issues?** → [Report here](https://github.com/cyberytti/CodeSqueeze/issues)
-- 💡 **Feature ideas?** → [Start a discussion](https://github.com/cyberytti/CodeSqueeze/discussions)
-- 🐙 **Follow updates** → [@cyberytti](https://github.com/cyberytti)
-
----
 
 <div align="center">
 
