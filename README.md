@@ -48,18 +48,14 @@
 
 ## 🚀 **Get Started in 30 Seconds**
 
-### **Install Once**
+### **Install on macOS and Linux**
 ```bash
-# Install UV (the fast Python package manager)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Get CodeSqueeze
-curl https://raw.githubusercontent.com/cyberytti/CodeSqueeze/refs/heads/main/CodeSqueeze.py -o CodeSqueeze.py
+curl -fsSL https://raw.githubusercontent.com/cyberytti/CodeSqueeze/main/install.sh | sudo bash
 ```
 
 ### **Check help**
 ```bash
-uv run CodeSqueeze.py --help
+CodeSqueeze --help
 ```
 
 **That's it!** 🎉 **Now you are ready to squeeze your code bases**
@@ -70,25 +66,25 @@ uv run CodeSqueeze.py --help
 
 ### **🐛 "My React app has a weird bug"**
 ```bash
-uv run CodeSqueeze.py my-react-app --copy
+CodeSqueeze my-react-app --copy
 ```
 → Paste in ChatGPT: *"Here's my full React app. There's a weird rendering bug on the dashboard page. Can you help me find what's causing it?"*
 
 ### **📚 "Please review my Python project"**
 ```bash
-uv run CodeSqueeze.py my-python-project --ignore tests --copy
+CodeSqueeze my-python-project --ignore tests --copy
 ```
 → Paste in Claude: *"Can you review this codebase and suggest improvements for performance and code quality?"*
 
 ### **🎓 "Explain this codebase to me"**
 ```bash
-uv run CodeSqueeze.py legacy-project --copy
+CodeSqueeze legacy-project --copy
 ```
 → Paste in AI: *"I inherited this codebase. Can you explain how it works and create documentation for the main components?"*
 
 ### **🔄 "Help me migrate to Next.js"**
 ```bash
-uv run CodeSqueeze.py old-react-app -e json -e md --copy
+CodeSqueeze old-react-app -e json -e md --copy
 ```
 → Paste in AI: *"Can you help me migrate this React app to Next.js 14? What's the best approach?"*
 
@@ -98,19 +94,19 @@ uv run CodeSqueeze.py old-react-app -e json -e md --copy
 
 ```bash
 # 📋 Most used: Copy entire project to clipboard
-uv run CodeSqueeze.py my-project --copy
+CodeSqueeze my-project --copy
 
 # 📝 Include config files and documentation  
-uv run CodeSqueeze.py my-project -e json -e yaml -e md --copy
+CodeSqueeze my-project -e json -e yaml -e md --copy
 
 # 🚫 Skip test files and build folders
-uv run CodeSqueeze.py my-project --ignore tests --ignore build --copy
+CodeSqueeze my-project --ignore tests --ignore build --copy
 
 # 🎯 Include only specific important files
-uv run CodeSqueeze.py my-project -f README.md -f package.json --copy
+CodeSqueeze my-project -f README.md -f package.json --copy
 
 # 💾 Save to file instead of clipboard
-uv run CodeSqueeze.py my-project -o my-project-for-ai.txt
+CodeSqueeze my-project -o my-project-for-ai.txt
 ```
 
 ---
