@@ -7,6 +7,7 @@
 # ]
 # ///
 
+
 try:
     import os
     from pathlib import Path
@@ -15,6 +16,7 @@ try:
     import shutil
     import pyfiglet
     import pyperclip
+
 
     def print_banner():
         """Enhanced banner with modern aesthetics and better visual appeal"""
@@ -136,18 +138,14 @@ try:
             print("║" + " " * 10 + "Codebase → AI Format" + " " * 10 + "║")
             print("╚" + "═" * 50 + "╝")
             print(f"Error in banner: {error}\n")
-
     print_banner()
 except Exception as error:
-    print (error)
-
-
+    print(error)
 
 class Get_file_paths:
-    def __init__(self, given_dir, extra_extensions=None, ignored_files=None, add_files=None,output_file=None):
+    def __init__(self, given_dir, extra_extensions=None, ignored_files=None, ignored_directories=None, add_files=None, output_file=None):
         self.base_dir = os.path.abspath(given_dir)
-
-        self.prompt=f"""You are an expert coding agent with context-aware understanding of software projects. While you're designed to analyze entire codebases, *only a subset of files and the project structure* has been provided due to context window constraints.  
+        self.prompt = f"""You are an expert coding agent with context-aware understanding of software projects. While you're designed to analyze entire codebases, *only a subset of files and the project structure* has been provided due to context window constraints.  
 
 *Your responsibilities:*  
 1. *Accurately execute tasks* (e.g., debugging, documentation, feature implementation) *using ONLY the files currently in context*.  
@@ -164,13 +162,15 @@ class Get_file_paths:
 - ✅ *ALWAYS* clarify ambiguities before proceeding
 
 provided project : {self.base_dir}"""
+        
 
         if output_file:
             self.final_file_path = os.path.abspath(output_file)
         else:
             self.final_file_path = f"{self.base_dir}_codebase.txt"
-        self.ignored_files = ignored_files
-        self.add_files=add_files
+        self.ignored_files = ignored_files or []
+        self.add_files = add_files or []
+        self.ignored_directories = ignored_directories or []
         
         # Default list of supported file extensions
         self.extensions_list = [
@@ -232,23 +232,18 @@ provided project : {self.base_dir}"""
     ) -> str:
         """Return an ASCII tree of the directory rooted at *root*."""
         root = Path(root)
-
         if not root.is_dir():
             return f"{root} is not a directory\n"
-
         if max_depth is not None and _depth > max_depth:
             return ""
-
         entries = sorted(
             (p for p in root.iterdir() if show_hidden or not p.name.startswith(".")),
             key=lambda p: (p.is_file(), p.name.lower())
         )
-
         lines: list[str] = []
         for idx, path in enumerate(entries):
             connector = "└── " if idx == len(entries) - 1 else "├── "
             lines.append(f"{_prefix}{connector}{path.name}")
-
             if path.is_dir():
                 extension = "    " if idx == len(entries) - 1 else "│   "
                 subtree = self._tree(
@@ -259,12 +254,15 @@ provided project : {self.base_dir}"""
                     _depth=_depth + 1,
                 )
                 lines.append(subtree.rstrip())
-
         return "\n".join(lines) + ("\n" if lines else "")
 
     def get_all_file_paths(self):
         file_paths = []
         for root, directories, files in os.walk(self.base_dir):
+            # Skip ignored directories
+            if self.ignored_directories:
+                directories[:] = [d for d in directories if not any(ignored_dir in os.path.join(root, d) for ignored_dir in self.ignored_directories)]
+            
             for filename in files:
                 filepath = os.path.join(root, filename)
                 file_paths.append(filepath)
@@ -277,6 +275,16 @@ provided project : {self.base_dir}"""
                 final_purified_file_paths.append(path)
         return final_purified_file_paths
     
+    def _remove_folders(self, file_paths, directories_to_remove):
+        """Remove files that are in specified directories"""
+        if not directories_to_remove:
+            return file_paths
+        
+        return [
+            path for path in file_paths
+            if not any(os.path.normpath(dir_to_remove) in os.path.normpath(path) for dir_to_remove in directories_to_remove)
+        ]
+
     def _get_file_size_kb(self, file_path):
         """Get file size in KB using os.stat()"""
         try:
@@ -290,34 +298,36 @@ provided project : {self.base_dir}"""
     def _create_final_file(self):
         all_files = self.get_all_file_paths()
         source_files = self.purify_files(all_files)
-       
+        
+        # Add extra files if specified
         if self.add_files:
             for r in self.add_files:
-                if os.path.abspath(r) not in source_files:
-                    source_files.append(os.path.abspath(r))
-
+                abs_path = os.path.abspath(r)
+                if abs_path not in source_files:
+                    source_files.append(abs_path)
       
         # Process ignored files
         if self.ignored_files:
             # Convert to absolute paths for reliable comparison
             ignored_abs = [os.path.abspath(f) for f in self.ignored_files]
             source_files = [f for f in source_files if os.path.abspath(f) not in ignored_abs]
-
+        
+        # Remove files from ignored directories (additional safety check)
+        if self.ignored_directories:
+            source_files = self._remove_folders(source_files, self.ignored_directories)
+        
         # Create header with styling
         header = f"""{self.prompt}
-
 PROJECT STRUCTURE:
 {'-'*40}
 {self._tree(self.base_dir)}
 {'='*80}
-
 FILE CONTENTS:
 {'='*80}
 """
-
         with open(self.final_file_path, "w", encoding="utf-8") as outfile:
             outfile.write(header)
-
+        
         processed_count = 0
         for file_path in source_files:
             relative_path = os.path.relpath(file_path, self.base_dir)
@@ -329,7 +339,7 @@ FILE CONTENTS:
             except Exception as e:
                 click.echo(click.style(f"⚠️  Could not read {relative_path}: {e}", fg='yellow'))
                 continue
-
+            
             # Append file content with separator
             separator = f"\n{'-'*60}\n"
             with open(self.final_file_path, "a", encoding="utf-8") as outfile:
@@ -344,7 +354,7 @@ FILE CONTENTS:
             # Progress indicator
             if processed_count % 10 == 0:
                 click.echo(f"📦 Processed {processed_count}/{len(source_files)} files...")
-
+        
         return (
             self.final_file_path, 
             source_files, 
@@ -354,17 +364,16 @@ FILE CONTENTS:
     def main(self):
         return self._create_final_file()
 
-
 @click.command(
     context_settings=dict(help_option_names=["-h", "--help"]),
     epilog="""
 Examples:
   # Basic usage (creates myproject_codebase.txt)
   $ CodeSqueeze.py myproject
-
-  # Include Markdown files and ignore tests
-  $ CodeSqueeze.py myproject -e md -e yaml --ignore tests
-
+  # Include Markdown files and ignore tests directory
+  $ CodeSqueeze.py myproject -e md -e yaml --ignore_directory tests
+  # Ignore specific files and directories
+  $ CodeSqueeze.py myproject -i config.py --ignore_directory __pycache__ --ignore_directory .git
   # Add custom file and specify output
   $ CodeSqueeze.py myproject -f docs/notes.md -o all_code.txt
 """,
@@ -387,8 +396,16 @@ Examples:
     "--ignore",
     multiple=True,
     metavar="PATH",
-    help="Exclude files/directories (relative to PROJECT_DIR). "
-         "Example: --ignore tests --ignore docs/notes.md",
+    help="Exclude files (relative to PROJECT_DIR). "
+         "Example: --ignore tests.txt --ignore docs/notes.md",
+)
+@click.option(
+    "-id",
+    "--ignore_directory",
+    multiple=True,
+    metavar="PATH",
+    help="Exclude directories (relative to PROJECT_DIR). "
+         "Example: --ignore_directory tests --ignore_directory __pycache__",
 )
 @click.option(
     "-f",
@@ -411,7 +428,7 @@ Examples:
     is_flag=True,
     help='Copy the generated codebase file to your clipboard as a prompt.'
 )
-def cli(directory, extra_extensions, ignore, add_files, output, copy):
+def cli(directory, extra_extensions, ignore, ignore_directory, add_files, output, copy):
     """
     Creates a single text file containing your entire codebase.
     
@@ -419,13 +436,10 @@ def cli(directory, extra_extensions, ignore, add_files, output, copy):
     
     Perfect for sharing with AI assistants (ChatGPT, Claude, etc.) or 
     teammates - includes all source files in a clean, organized format.
-
     By default includes common programming files (Python, JS, Java, etc.).
     Use options to customize what gets included.
     """
-
     
-
     # Convert directory to absolute path
     base_dir = os.path.abspath(directory)
     
@@ -438,7 +452,7 @@ def cli(directory, extra_extensions, ignore, add_files, output, copy):
         else:
             processed_ignored.append(os.path.abspath(os.path.join(base_dir, f)))
     
-    
+    # Process add_files
     processed_add_files = []
     for f in add_files:
         # If absolute path, use as-is, otherwise make relative to base_dir
@@ -447,14 +461,20 @@ def cli(directory, extra_extensions, ignore, add_files, output, copy):
         else:
             processed_add_files.append(os.path.abspath(os.path.join(base_dir, f)))
     
-    
-
+    # Process ignored directories
+    processed_ignored_dirs = []
+    for d in ignore_directory:
+        if os.path.isabs(d):
+            processed_ignored_dirs.append(d)
+        else:
+            processed_ignored_dirs.append(os.path.join(base_dir, d))
     
     # Create the file collector
     collector = Get_file_paths(
         given_dir=directory,
         extra_extensions=extra_extensions,
         ignored_files=processed_ignored,
+        ignored_directories=processed_ignored_dirs,
         add_files=processed_add_files,
         output_file=output
     )
@@ -462,8 +482,6 @@ def cli(directory, extra_extensions, ignore, add_files, output, copy):
     # Generate the codebase file
     final_file, processed_files, total_size_kb = collector.main()
     
-    
-
     # Print results
     click.echo("\n" + click.style("✓ Successfully processed files:", fg='green', bold=True))
     for f in processed_files:
@@ -484,14 +502,13 @@ def cli(directory, extra_extensions, ignore, add_files, output, copy):
         click.echo(click.style(f"  Estimated tokens: {token_estimate:,}", fg='magenta'))
     except Exception as e:
         click.echo(click.style(f"  Token estimation failed: {e}", fg='yellow'))
-
+    
     if copy:
-        with open(final_file,"r") as file:
-            text=file.read()
-        text=text+"\n\nQuery: [provide your query]"
+        with open(final_file, "r") as file:
+            text = file.read()
+        text = text + "\n\nQuery: [provide your query]"
         pyperclip.copy(text)
         click.echo(click.style(f"\n✓ Successfully Copied as prompt!\n", fg='cyan'))
-
 
 if __name__ == '__main__':
     cli()
