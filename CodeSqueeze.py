@@ -161,7 +161,9 @@ class Get_file_paths:
 - ❌ *NEVER* invent code from unprovided files  
 - ❌ *NEVER* guess file contents/structure  
 - ✅ *ALWAYS* reference the project structure when requesting files  
-- ✅ *ALWAYS* clarify ambiguities before proceeding
+- ✅ *ALWAYS* clarify ambiguities before proceeding  
+
+Due to context limits, the code is compressed by removing newlines and tabs when sent. However, when responding, debugging, or providing code, always use normal, readable formatting that can be copied and pasted directly.
 
 provided project : {self.base_dir}"""
         
