@@ -13,7 +13,7 @@ try:
     import re
     import sys
     from pathlib import Path
-    from typing import Union, Optional
+    from typing import Union, Optional ,List , Tuple
     import click
     import shutil
     import pyfiglet
@@ -141,291 +141,445 @@ try:
             print("╚" + "═" * 50 + "╝")
             print(f"Error in banner: {error}\n")
     print_banner()
-except Exception as error:
-    print(error)
 
-class Get_file_paths:
-    def __init__(self, given_dir, extra_extensions=None, ignored_files=None, ignored_directories=None, add_files=None, output_file=None):
-        self.base_dir = os.path.abspath(given_dir)
-        self.prompt = f"""You are an expert coding agent with context-aware understanding of software projects. While you're designed to analyze entire codebases, *only a subset of files and the project structure* has been provided due to context window constraints.  
 
-*Your responsibilities:*  
-1. *Accurately execute tasks* (e.g., debugging, documentation, feature implementation) *using ONLY the files currently in context*.  
-2. *Explicitly request missing files* when needed:  
-   - State exactly which file(s) you require (using full paths from the provided project structure)  
-   - Justify why the file is essential for the task  
-   - Never assume file existence beyond the provided context  
-3. *Prioritize solutions within scope*: If a task can be completed with available files, do so without requesting additions.  
-
-*Critical rules:*  
-- ❌ *NEVER* invent code from unprovided files  
-- ❌ *NEVER* guess file contents/structure  
-- ✅ *ALWAYS* reference the project structure when requesting files  
-- ✅ *ALWAYS* clarify ambiguities before proceeding  
-
-Due to context limits, the code is compressed by removing newlines and tabs when sent. However, when responding, debugging, or providing code, always use normal, readable formatting that can be copied and pasted directly.
-
-provided project : {self.base_dir}"""
+    class CodebaseProcessor:
+        """
+        A comprehensive tool for processing and analyzing codebases.
         
-
-        if output_file:
-            self.final_file_path = os.path.abspath(output_file)
-        else:
-            self.final_file_path = f"{self.base_dir}_codebase.txt"
-        self.ignored_files = ignored_files or []
-        self.add_files = add_files or []
-        self.ignored_directories = ignored_directories or []
+        This class scans a directory structure, filters files based on extensions and ignore patterns,
+        and creates a consolidated text file containing the project structure and file contents.
+        The output is formatted for use with AI coding agents.
+        """
         
-        # Default list of supported file extensions
-        self.extensions_list = [
-            "py",
-            "cpp",
-            "java",
-            "js",
-            "ts",
-            "c",
-            "h",
-            "cs",
-            "go",
-            "rs",
-            "rb",
-            "php",
-            "swift",
-            "kt",
-            "scala",
-            "pl",
-            "lua",
-            "r",
-            "dart",
-            "html",
-            "htm",
-            "css",
-            "jsx",
-            "scss",
-            "tsx",
-            "vue",
-            "svelte",
-            "sh",
-            "bash",
-            "ps1",
-            "bat",
-            "cmd",
-             "hs",    
-            "jl",   
-            "sql",   
-            "m",    
-            "ex",   
-            "exs",   
-            "vb",    
-            "fs",   
-            "groovy",
-            "erl",  
+        # Default directories to ignore during processing
+        DEFAULT_IGNORED_DIRECTORIES = [
+            "node_modules",      # Node.js dependencies - contains source files
+            "vendor",            # Go/PHP dependencies - contains source files  
+            "packages",          # Some package managers - contains source files
+            "deps",              # Elixir/Erlang dependencies - contains source files
+            "lib",               # Ruby gems/dependencies - contains source files
+            "gems",              # Ruby gems - contains source files
+            "bundle",            # Bundler gems - contains source files
+            "Pods",              # iOS CocoaPods - contains source files
+            "Carthage",          # iOS Carthage - contains source files
+            "gradle",            # Gradle wrapper - contains source files
+            "mvnw",              # Maven wrapper - contains source files
+            ".gradle",           # Gradle cache - contains source files
+            ".m2",               # Maven local repository - contains source files
+            "target/dependency", # Maven dependencies - contains source files
         ]
         
-        if extra_extensions:
-            self.extensions_list.extend(ext.lstrip(".").lower() for ext in extra_extensions)
-
-    def _tree(
-            self,
-            root: Union[str, "os.PathLike[str]"],
-            *,
-            max_depth: Optional[int] = None,
-            show_hidden: bool = False,
-            _prefix: str = "",
-            _depth: int = 0
-    ) -> str:
-        """Return an ASCII tree of the directory rooted at *root*."""
-        root = Path(root)
-        if not root.is_dir():
-            return f"{root} is not a directory\n"
-        if max_depth is not None and _depth > max_depth:
-            return ""
-        entries = sorted(
-            (p for p in root.iterdir() if show_hidden or not p.name.startswith(".")),
-            key=lambda p: (p.is_file(), p.name.lower())
-        )
-        lines: list[str] = []
-        for idx, path in enumerate(entries):
-            connector = "└── " if idx == len(entries) - 1 else "├── "
-            lines.append(f"{_prefix}{connector}{path.name}")
-            if path.is_dir():
-                extension = "    " if idx == len(entries) - 1 else "│   "
-                subtree = self._tree(
-                    path,
-                    max_depth=max_depth,
-                    show_hidden=show_hidden,
-                    _prefix=_prefix + extension,
-                    _depth=_depth + 1,
-                )
-                lines.append(subtree.rstrip())
-        return "\n".join(lines) + ("\n" if lines else "")
-
-    def get_all_file_paths(self):
-        file_paths = []
-        for root, directories, files in os.walk(self.base_dir):
-            # Skip ignored directories
-            if self.ignored_directories:
-                directories[:] = [d for d in directories if not any(ignored_dir in os.path.join(root, d) for ignored_dir in self.ignored_directories)]
+        # Default supported file extensions for code files
+        DEFAULT_SUPPORTED_EXTENSIONS = [
+            "py", "cpp", "java", "js", "ts", "c", "h", "cs", "go", "rs", "rb", "php",
+            "swift", "kt", "scala", "pl", "lua", "r", "dart", "html", "htm", "css",
+            "jsx", "scss", "tsx", "vue", "svelte", "sh", "bash", "ps1", "bat", "cmd",
+            "hs", "jl", "sql", "m", "ex", "exs", "vb", "fs", "groovy", "erl",
+        ]
+        
+        def __init__(self, 
+                    source_directory: str,
+                    additional_extensions: Optional[List[str]] = None,
+                    ignored_files: Optional[List[str]] = None,
+                    ignored_directories: Optional[List[str]] = None,
+                    additional_files: Optional[List[str]] = None,
+                    output_file: Optional[str] = None):
+            """
+            Initialize the CodebaseProcessor.
             
-            for filename in files:
-                filepath = os.path.join(root, filename)
-                file_paths.append(filepath)
-        return file_paths
+            Args:
+                source_directory: Path to the directory to process
+                additional_extensions: Extra file extensions to include (without dots)
+                ignored_files: Specific files to exclude from processing
+                ignored_directories: Additional directories to ignore
+                additional_files: Specific files to include regardless of extension
+                output_file: Path for the output file (defaults to {source_directory}_codebase.txt)
+            """
+            self.source_directory = os.path.abspath(source_directory)
+            self.output_file_path = self._determine_output_path(output_file)
+            
+            # Initialize file and directory filters
+            self.ignored_files = ignored_files or []
+            self.additional_files = additional_files or []
+            self.ignored_directories = self._setup_ignored_directories(ignored_directories)
+            self.supported_extensions = self._setup_supported_extensions(additional_extensions)
+            
+            # Generate the AI agent prompt
+            self.ai_agent_prompt = self._generate_ai_agent_prompt()
+        
+        def _determine_output_path(self, output_file: Optional[str]) -> str:
+            """Determine the output file path."""
+            if output_file:
+                return os.path.abspath(output_file)
+            return f"{self.source_directory}_codebase.txt"
+        
+        def _setup_ignored_directories(self, additional_ignored: Optional[List[str]]) -> List[str]:
+            """Setup the list of directories to ignore."""
+            ignored_dirs = self.DEFAULT_IGNORED_DIRECTORIES.copy()
+            if additional_ignored:
+                ignored_dirs.extend(additional_ignored)
+            return ignored_dirs
+        
+        def _setup_supported_extensions(self, additional_extensions: Optional[List[str]]) -> List[str]:
+            """Setup the list of supported file extensions."""
+            extensions = self.DEFAULT_SUPPORTED_EXTENSIONS.copy()
+            if additional_extensions:
+                # Clean and add additional extensions
+                clean_extensions = [ext.lstrip(".").lower() for ext in additional_extensions]
+                extensions.extend(clean_extensions)
+            return extensions
+        
+        def _generate_ai_agent_prompt(self) -> str:
+            """Generate the prompt text for AI agents."""
+            return f"""You are an expert coding agent with context-aware understanding of software projects. While you're designed to analyze entire codebases, *only a subset of files and the project structure* has been provided due to context window constraints.  
 
-    def _remove_newlines(self,file_path: str) -> str:
-        if not isinstance(file_path, str):
-            raise TypeError("file_path must be a string")
+    *Your responsibilities:*  
+    1. *Accurately execute tasks* (e.g., debugging, documentation, feature implementation) *using ONLY the files currently in context*.  
+    2. *Explicitly request missing files* when needed:  
+    - State exactly which file(s) you require (using full paths from the provided project structure)  
+    - Justify why the file is essential for the task  
+    - Never assume file existence beyond the provided context  
+    3. *Prioritize solutions within scope*: If a task can be completed with available files, do so without requesting additions.  
 
-        try:
-            # Read the entire file
-            with open(file_path, "r", encoding="utf-8") as file:
-                text = file.read()
+    *Critical rules:*  
+    - ❌ *NEVER* invent code from unprovided files  
+    - ❌ *NEVER* guess file contents/structure  
+    - ✅ *ALWAYS* reference the project structure when requesting files  
+    - ✅ *ALWAYS* clarify ambiguities before proceeding  
 
-            # Remove newline characters
-            cleaned_text = text.replace("\n", "")
+    Due to context limits, the code is compressed by removing newlines and tabs when sent. However, when responding, debugging, or providing code, always use normal, readable formatting that can be copied and pasted directly.
 
-            # Write the cleaned content back to the same file
-            with open(file_path, "w", encoding="utf-8") as file:
-                file.write(cleaned_text)
+    provided project : {self.source_directory}"""
 
-            return file_path
+        def generate_directory_tree(self,
+                                root: Union[str, "os.PathLike[str]"],
+                                max_depth: Optional[int] = None,
+                                show_hidden: bool = False,
+                                ignored_dirs: Optional[List[str]] = None,
+                                _prefix: str = "",
+                                _depth: int = 0) -> str:
+            """
+            Generate an ASCII tree representation of the directory structure.
+            
+            Args:
+                root: Root directory to start from
+                max_depth: Maximum depth to traverse
+                show_hidden: Whether to show hidden files/directories
+                ignored_dirs: List of directories to ignore
+                _prefix: Internal parameter for recursion
+                _depth: Internal parameter for recursion
+                
+            Returns:
+                ASCII tree representation as a string
+            """
+            root = Path(root)
+            if not root.is_dir():
+                return f"{root} is not a directory\n"
+            
+            if max_depth is not None and _depth > max_depth:
+                return ""
+            
+            # Use class ignored directories if none provided
+            if ignored_dirs is None:
+                ignored_dirs = self.ignored_directories
+            
+            # Convert ignored directories to absolute paths for comparison
+            ignored_paths = set()
+            if ignored_dirs:
+                for ignored_dir in ignored_dirs:
+                    ignored_path = Path(ignored_dir)
+                    if not ignored_path.is_absolute():
+                        ignored_path = root / ignored_path
+                    ignored_paths.add(ignored_path.resolve())
+            
+            # Get sorted entries, excluding ignored directories
+            entries = sorted(
+                (p for p in root.iterdir() 
+                if (show_hidden or not p.name.startswith(".")) 
+                and p.resolve() not in ignored_paths),
+                key=lambda p: (p.is_file(), p.name.lower())
+            )
+            
+            lines: List[str] = []
+            for idx, path in enumerate(entries):
+                connector = "└── " if idx == len(entries) - 1 else "├── "
+                lines.append(f"{_prefix}{connector}{path.name}")
+                
+                if path.is_dir():
+                    extension = "    " if idx == len(entries) - 1 else "│   "
+                    subtree = self.generate_directory_tree(
+                        path,
+                        max_depth=max_depth,
+                        show_hidden=show_hidden,
+                        ignored_dirs=ignored_dirs,
+                        _prefix=_prefix + extension,
+                        _depth=_depth + 1,
+                    )
+                    lines.append(subtree.rstrip())
+            
+            return "\n".join(lines) + ("\n" if lines else "")
 
-        except FileNotFoundError as exc:
-            print(f"Error: '{file_path}' does not exist.", file=sys.stderr)
-            sys.exit(1)
-        except PermissionError as exc:
-            print(f"Error: Permission denied accessing '{file_path}'.", file=sys.stderr)
-            sys.exit(1)
-        except OSError as exc:
-            print(f"OS error while processing '{file_path}': {exc}", file=sys.stderr)
-            sys.exit(1)
-        except Exception as exc:
-            print(f"Unexpected error: {exc}", file=sys.stderr)
-            sys.exit(1)
+        def discover_all_files(self) -> List[str]:
+            """
+            Recursively collect every file under `source_directory`
+            while skipping any directory whose *name* matches an entry
+            in `ignored_directories` (either default or user-supplied).
+            """
+            file_paths = []
 
-    def _replace_multiple_tabs(self,file_path: str) -> str:
-        if not isinstance(file_path, str):
-            raise TypeError("file_path must be a string")
+            # Build a *flat* set of directory basenames to ignore
+            ignored_basenames = {Path(d).name for d in self.ignored_directories}
 
-        try:
-            with open(file_path, "r", encoding="utf-8") as file:
-                content = file.read()
+            for root, dirs, files in os.walk(self.source_directory, topdown=True):
+                # Filter the *in-place* list of dirs so os.walk never descends into them
+                dirs[:] = [
+                    d for d in dirs
+                    if d not in ignored_basenames
+                ]
 
-            cleaned_content = re.sub(r"\t{2,}", "\t", content)
+                # Collect every file left
+                for filename in files:
+                    filepath = os.path.join(root, filename)
+                    file_paths.append(filepath)
 
-            with open(file_path, "w", encoding="utf-8") as file:
-                file.write(cleaned_content)
-
-            return file_path
-
-        except FileNotFoundError as exc:
-            print(f"Error: '{file_path}' does not exist.", file=sys.stderr)
-            sys.exit(1)
-        except PermissionError as exc:
-            print(f"Error: Permission denied accessing '{file_path}'.", file=sys.stderr)
-            sys.exit(1)
-        except OSError as exc:
-            print(f"OS error while processing '{file_path}': {exc}", file=sys.stderr)
-            sys.exit(1)
-        except Exception as exc:
-            print(f"Unexpected error: {exc}", file=sys.stderr)
-            sys.exit(1)
-
-    def purify_files(self, file_paths):
-        final_purified_file_paths = []
-        for path in file_paths:
-            if '.' in path and path.split('.')[-1].lower() in self.extensions_list:
-                final_purified_file_paths.append(path)
-        return final_purified_file_paths
-    
-    def _remove_folders(self, file_paths, directories_to_remove):
-        """Remove files that are in specified directories"""
-        if not directories_to_remove:
             return file_paths
-        
-        return [
-            path for path in file_paths
-            if not any(os.path.normpath(dir_to_remove) in os.path.normpath(path) for dir_to_remove in directories_to_remove)
-        ]
 
-    def _get_file_size_kb(self, file_path):
-        """Get file size in KB using os.stat()"""
-        try:
-            stat_info = os.stat(file_path)
-            size_bytes = stat_info.st_size
-            size_kb = size_bytes / 1024
-            return size_kb
-        except FileNotFoundError:
-            return 0
-    
-    def _create_final_file(self):
-        all_files = self.get_all_file_paths()
-        source_files = self.purify_files(all_files)
-        
-        # Add extra files if specified
-        if self.add_files:
-            for r in self.add_files:
-                abs_path = os.path.abspath(r)
-                if abs_path not in source_files:
-                    source_files.append(abs_path)
-      
-        # Process ignored files
-        if self.ignored_files:
-            # Convert to absolute paths for reliable comparison
-            ignored_abs = [os.path.abspath(f) for f in self.ignored_files]
-            source_files = [f for f in source_files if os.path.abspath(f) not in ignored_abs]
-        
-        # Remove files from ignored directories (additional safety check)
-        if self.ignored_directories:
-            source_files = self._remove_folders(source_files, self.ignored_directories)
-        
-        # Create header with styling
-        header = f"""{self.prompt}
-PROJECT STRUCTURE:
-{'-'*40}
-{self._tree(self.base_dir)}
-{'='*80}
-FILE CONTENTS:
-{'='*80}
-"""
-        with open(self.final_file_path, "w", encoding="utf-8") as outfile:
-            outfile.write(header)
-        
-        processed_count = 0
-        for file_path in source_files:
-            relative_path = os.path.relpath(file_path, self.base_dir)
-            size = self._get_file_size_kb(file_path)
+        def filter_files_by_extension(self, file_paths: List[str]) -> List[str]:
+            """
+            Filter files to include only those with supported extensions.
             
+            Args:
+                file_paths: List of file paths to filter
+                
+            Returns:
+                List of filtered file paths
+            """
+            filtered_files = []
+            for path in file_paths:
+                if '.' in path:
+                    extension = path.split('.')[-1].lower()
+                    if extension in self.supported_extensions:
+                        filtered_files.append(path)
+            return filtered_files
+        
+        def remove_files_from_ignored_directories(self, 
+                                                file_paths: List[str], 
+                                                directories_to_remove: List[str]) -> List[str]:
+            """
+            Remove files that are located in specified directories.
+            
+            Args:
+                file_paths: List of file paths
+                directories_to_remove: List of directory paths to exclude
+                
+            Returns:
+                Filtered list of file paths
+            """
+            if not directories_to_remove:
+                return file_paths
+            
+            return [
+                path for path in file_paths
+                if not any(os.path.normpath(dir_to_remove) in os.path.normpath(path) 
+                        for dir_to_remove in directories_to_remove)
+            ]
+
+        def get_file_size_kb(self, file_path: str) -> float:
+            """
+            Get file size in kilobytes.
+            
+            Args:
+                file_path: Path to the file
+                
+            Returns:
+                File size in KB, or 0 if file not found
+            """
             try:
-                with open(file_path, "r", encoding="utf-8", errors="ignore") as infile:
-                    file_content = infile.read()
-            except Exception as e:
-                click.echo(click.style(f"⚠️  Could not read {relative_path}: {e}", fg='yellow'))
-                continue
+                stat_info = os.stat(file_path)
+                size_bytes = stat_info.st_size
+                return size_bytes / 1024
+            except FileNotFoundError:
+                return 0.0
+
+        def compress_file_content(self, file_path: str) -> str:
+            """
+            Remove newlines and compress multiple tabs in a file.
             
-            # Append file content with separator
+            Args:
+                file_path: Path to the file to compress
+                
+            Returns:
+                Path to the processed file
+                
+            Raises:
+                SystemExit: If file operations fail
+            """
+            if not isinstance(file_path, str):
+                raise TypeError("file_path must be a string")
+
+            try:
+                # Read the file content
+                with open(file_path, "r", encoding="utf-8") as file:
+                    content = file.read()
+
+                # Remove newlines and compress multiple tabs
+                content = content.replace("\n", "")
+                content = re.sub(r"\t{2,}", "\t", content)
+
+                # Write the compressed content back
+                with open(file_path, "w", encoding="utf-8") as file:
+                    file.write(content)
+
+                return file_path
+
+            except FileNotFoundError:
+                print(f"Error: '{file_path}' does not exist.", file=sys.stderr)
+                sys.exit(1)
+            except PermissionError:
+                print(f"Error: Permission denied accessing '{file_path}'.", file=sys.stderr)
+                sys.exit(1)
+            except OSError as exc:
+                print(f"OS error while processing '{file_path}': {exc}", file=sys.stderr)
+                sys.exit(1)
+            except Exception as exc:
+                print(f"Unexpected error: {exc}", file=sys.stderr)
+                sys.exit(1)
+        
+        def create_consolidated_file(self) -> Tuple[str, List[str], float]:
+            """
+            Create the final consolidated file with project structure and file contents.
+            
+            Returns:
+                Tuple containing:
+                - Path to the processed output file
+                - List of processed source files
+                - Output file size in KB
+            """
+            # Discover and filter files
+            all_files = self.discover_all_files()
+            source_files = self.filter_files_by_extension(all_files)
+            
+            # Add additional files if specified
+            if self.additional_files:
+                for file_path in self.additional_files:
+                    abs_path = os.path.abspath(file_path)
+                    if abs_path not in source_files:
+                        source_files.append(abs_path)
+        
+            # Remove ignored files
+            if self.ignored_files:
+                ignored_abs_paths = [os.path.abspath(f) for f in self.ignored_files]
+                source_files = [f for f in source_files 
+                            if os.path.abspath(f) not in ignored_abs_paths]
+            
+            # Additional safety check: remove files from ignored directories
+            if self.ignored_directories:
+                source_files = self.remove_files_from_ignored_directories(
+                    source_files, self.ignored_directories
+                )
+            
+            # Create the header with project structure
+            header = self._create_file_header()
+            
+            # Write header to output file
+            with open(self.output_file_path, "w", encoding="utf-8") as outfile:
+                outfile.write(header)
+            
+            # Process each source file
+            processed_count = self._process_source_files(source_files)
+            
+            # Compress the final output file
+            compressed_path = self.compress_file_content(self.output_file_path)
+            file_size_kb = self.get_file_size_kb(self.output_file_path)
+            
+            return compressed_path, source_files, file_size_kb
+        
+        def _create_file_header(self) -> str:
+            """Create the header section of the output file."""
+            directory_tree = self.generate_directory_tree(self.source_directory)
+            
+            return f"""{self.ai_agent_prompt}
+    PROJECT STRUCTURE:
+    {'-'*40}
+    {directory_tree}
+    {'='*80}
+    FILE CONTENTS:
+    {'='*80}
+    """
+        
+        def _process_source_files(self, source_files: List[str]) -> int:
+            """
+            Process each source file and append to output file.
+            
+            Args:
+                source_files: List of source files to process
+                
+            Returns:
+                Number of successfully processed files
+            """
+            processed_count = 0
+            
+            for file_path in source_files:
+                relative_path = os.path.relpath(file_path, self.source_directory)
+                
+                try:
+                    with open(file_path, "r", encoding="utf-8", errors="ignore") as infile:
+                        file_content = infile.read()
+                except Exception as e:
+                    click.echo(click.style(
+                        f"⚠️  Could not read {relative_path}: {e}", fg='yellow'
+                    ))
+                    continue
+                
+                # Append file content with proper formatting
+                self._append_file_content(relative_path, file_content)
+                
+                processed_count += 1
+                
+                # Show progress every 10 files
+                if processed_count % 10 == 0:
+                    click.echo(f"📦 Processed {processed_count}/{len(source_files)} files...")
+            
+            return processed_count
+        
+        def _append_file_content(self, relative_path: str, file_content: str) -> None:
+            """
+            Append a single file's content to the output file.
+            
+            Args:
+                relative_path: Relative path of the file
+                file_content: Content of the file
+            """
             separator = f"\n{'-'*60}\n"
-            with open(self.final_file_path, "a", encoding="utf-8") as outfile:
+            
+            with open(self.output_file_path, "a", encoding="utf-8") as outfile:
                 outfile.write(
                     f"{separator}"
                     f"📁 File: {relative_path}\n"
                     f"{'-'*60}\n"
                     f"## File content: \n{file_content}\n"
                 )
-            
-            processed_count += 1
-            # Progress indicator
-            if processed_count % 10 == 0:
-                click.echo(f"📦 Processed {processed_count}/{len(source_files)} files...")
         
-        return (
-            self._replace_multiple_tabs(self._remove_newlines(self.final_file_path)), 
-            source_files, 
-            self._get_file_size_kb(self.final_file_path)
-        )
-    
-    def main(self):
-        return self._create_final_file()
+        def process(self) -> Tuple[str, List[str], float]:
+            """
+            Main method to process the codebase.
+            
+            This is the primary entry point for using the CodebaseProcessor.
+            
+            Returns:
+                Tuple containing:
+                - Path to the processed output file
+                - List of processed source files  
+                - Output file size in KB
+            """
+            return self.create_consolidated_file()
+        
+except Exception as error:
+        print(error)
+
+
+
 
 @click.command(
     context_settings=dict(help_option_names=["-h", "--help"]),
@@ -533,17 +687,17 @@ def cli(directory, extra_extensions, ignore, ignore_directory, add_files, output
             processed_ignored_dirs.append(os.path.join(base_dir, d))
     
     # Create the file collector
-    collector = Get_file_paths(
-        given_dir=directory,
-        extra_extensions=extra_extensions,
+    collector = CodebaseProcessor(
+        source_directory=directory,
+        additional_extensions=extra_extensions,
         ignored_files=processed_ignored,
         ignored_directories=processed_ignored_dirs,
-        add_files=processed_add_files,
+        additional_files=processed_add_files,
         output_file=output
     )
     
     # Generate the codebase file
-    final_file, processed_files, total_size_kb = collector.main()
+    final_file, processed_files, total_size_kb = collector.process()
     
     # Print results
     click.echo("\n" + click.style("✓ Successfully processed files:", fg='green', bold=True))
