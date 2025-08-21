@@ -584,15 +584,43 @@ except Exception as error:
 @click.command(
     context_settings=dict(help_option_names=["-h", "--help"]),
     epilog="""
-Examples:
-  # Basic usage (creates myproject_codebase.txt)
-  $ CodeSqueeze.py myproject
-  # Include Markdown files and ignore tests directory
-  $ CodeSqueeze.py myproject -e md -e yaml --ignore_directory tests
-  # Ignore specific files and directories
-  $ CodeSqueeze.py myproject -i config.py --ignore_directory __pycache__ --ignore_directory .git
-  # Add custom file and specify output
-  $ CodeSqueeze.py myproject -f docs/notes.md -o all_code.txt
+\b
+EXAMPLES:
+    Basic usage (creates myproject_codebase.txt):
+        $ codesqueeze myproject
+
+    Include additional file types:
+        $ codesqueeze myproject -e md -e yaml -e txt
+
+    Exclude specific directories:
+        $ codesqueeze myproject --ignore-dir tests --ignore-dir __pycache__
+
+    Exclude specific files:
+        $ codesqueeze myproject -i config.py -i secrets.json
+
+    Include non-code files and set custom output:
+        $ codesqueeze myproject -f README.md -f docs/notes.txt -o complete_project.txt
+
+    Copy result directly to clipboard:
+        $ codesqueeze myproject --copy
+
+    Complex example with multiple options:
+        $ codesqueeze myproject -e md -e yaml -i config.py --ignore-dir tests -f LICENSE -o project_export.txt --copy
+
+\b
+SUPPORTED FILE TYPES (by default):
+    Programming: .py .js .ts .java .cpp .c .cs .go .rs .rb .php .swift .kt .scala
+    Web: .html .css .jsx .tsx .vue .svelte .scss
+    Scripts: .sh .bash .ps1 .bat .cmd
+    Data: .sql .json .xml .yaml .yml
+    And many more...
+
+\b
+NOTES:
+    • Files are compressed (whitespace removed) to save space
+    • Output includes project structure tree and file contents
+    • Perfect for sharing with AI assistants like ChatGPT, Claude, or GitHub Copilot
+    • Use --copy to get a ready-to-paste prompt for AI tools
 """,
 )
 @click.argument(
@@ -605,56 +633,64 @@ Examples:
     "--extra-extensions",
     multiple=True,
     metavar="EXT",
-    help="Add file extensions to include (without dot). "
-         "Example: -e md -e yaml",
+    help="Include additional file extensions (without dot). Can be used multiple times.",
 )
 @click.option(
     "-i",
     "--ignore",
     multiple=True,
-    metavar="PATH",
-    help="Exclude files (relative to PROJECT_DIR). "
-         "Example: --ignore tests.txt --ignore docs/notes.md",
+    metavar="FILE",
+    help="Exclude specific files from processing. Path relative to PROJECT_DIR.",
 )
 @click.option(
-    "-id",
-    "--ignore_directory",
+    "--ignore-dir",
+    "--ignore-directory", 
+    "ignore_directory",
     multiple=True,
-    metavar="PATH",
-    help="Exclude directories (relative to PROJECT_DIR). "
-         "Example: --ignore_directory tests --ignore_directory __pycache__",
+    metavar="DIR",
+    help="Exclude entire directories from processing. Path relative to PROJECT_DIR.",
 )
 @click.option(
     "-f",
     "--add-files",
     multiple=True,
-    metavar="PATH",
-    help="Include additional files (bypassing extension filters). "
-         "Example: -f notes.txt -f design/README.md",
+    metavar="FILE",
+    help="Force include specific files, even if they don't match normal extensions.",
 )
 @click.option(
     "-o",
     "--output",
     type=click.Path(),
-    metavar="FILE",
-    help="Output filename (default: PROJECT_DIR_codebase.txt)",
+    metavar="FILENAME",
+    help="Custom output filename (default: PROJECT_DIR_codebase.txt).",
 )
 @click.option(
-    '-c',
-    '--copy',
+    "-c",
+    "--copy",
     is_flag=True,
-    help='Copy the generated codebase file to your clipboard as a prompt.'
+    help="Copy the generated file content to clipboard as an AI-ready prompt.",
 )
 def cli(directory, extra_extensions, ignore, ignore_directory, add_files, output, copy):
     """
-    Creates a single text file containing your entire codebase.
+    Transform your entire codebase into a single, AI-friendly text file.
+
+    \b
+    PROJECT_DIR: The directory containing your project to process
     
-    PROJECT_DIR: Project directory to process
-    
-    Perfect for sharing with AI assistants (ChatGPT, Claude, etc.) or 
-    teammates - includes all source files in a clean, organized format.
-    By default includes common programming files (Python, JS, Java, etc.).
-    Use options to customize what gets included.
+    \b
+    WHAT IT DOES:
+    • Scans your project directory recursively
+    • Includes all common programming language files automatically  
+    • Creates a structured text file with project tree + file contents
+    • Compresses whitespace to maximize content in AI context windows
+    • Generates files perfect for ChatGPT, Claude, and other AI assistants
+
+    \b
+    AUTOMATICALLY IGNORED:
+    • Dependencies: node_modules, vendor, __pycache__, .git
+    • Build outputs: dist, build, target
+    • IDE files: .vscode, .idea
+    • Binary and media files
     """
     
     # Convert directory to absolute path
